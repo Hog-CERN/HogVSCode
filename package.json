@@ -2,6 +2,11 @@
   "name": "hog",
   "displayName": "Hog",
   "description": "Language support to Hog list files (https://cern.ch/hog)",
+  "publisher": "DavideCieri",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hog-CERN/HogVSCode"
+  },
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.74.0"
@@ -9,17 +14,39 @@
   "categories": [
     "Programming Languages"
   ],
+  "author": {
+    "email": "davide.cieri89@gmail.com",
+    "name": "Davide Cieri"
+  },
+  "keywords": [
+    "syntax"
+  ],
+  "homepage": "https://cern.ch/hog",
+  "icon": "hog.png",
   "contributes": {
-    "languages": [{
-      "id": "hog",
-      "aliases": ["Hog", "hog"],
-      "extensions": [".src",".sim",".con",".lst",".ext"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "hog",
-      "scopeName": "source.hog",
-      "path": "./syntaxes/hog.tmLanguage.json"
-    }]
+    "languages": [
+      {
+        "id": "hog",
+        "aliases": [
+          "Hog",
+          "hog"
+        ],
+        "extensions": [
+          ".src",
+          ".sim",
+          ".con",
+          ".lst",
+          ".ext"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "hog",
+        "scopeName": "source.hog",
+        "path": "./syntaxes/hog.tmLanguage.json"
+      }
+    ]
   }
 }
