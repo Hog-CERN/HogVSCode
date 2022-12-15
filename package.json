@@ -8,6 +8,9 @@
     "url": "https://github.com/Hog-CERN/HogVSCode"
   },
   "version": "0.0.2",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
   "categories": [
     "Programming Languages"
   ],
