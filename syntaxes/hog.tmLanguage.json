@@ -1,0 +1,64 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Hog",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#equals"
+		},
+		{
+			"include": "#numbers"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#comments"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [
+				{
+					"name": "keyword.control.hog",
+					"match": "\\b[^^](top|noimpl|lib|SystemVerilog|XDC|verilog_header|nosim|nosynth|topsim|runtime|wavefile|dofile|source|locked|qsys|noadd|nogenerate|notiming)\\b"
+				}
+			]
+		},
+		"equals": {
+			"patterns": [
+				{
+					"name": "constant.other.hog",
+					"match": "(=\\w+)"
+				}
+			]
+		},
+		"numbers": {
+			"patterns": [
+				{
+					"name": "constant.character.escape.hog",
+					"match": "\\b(-)?[0-9.]+\\b"
+				}
+			]
+		},
+		"strings": {
+			"name": "string.quoted.double.hog",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.hog",
+					"match": "\\\\."
+				}
+			]
+		},
+		"comments": {
+			"name": "comment.line.hog",
+			"begin": "#",
+			"end": "$\n?"
+		}
+	},
+	"scopeName": "source.hog"
+}

@@ -1,0 +1,25 @@
+{
+  "name": "hog",
+  "displayName": "Hog",
+  "description": "Language support to Hog list files (https://cern.ch/hog)",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "hog",
+      "aliases": ["Hog", "hog"],
+      "extensions": [".src",".sim",".con",".lst",".ext"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "hog",
+      "scopeName": "source.hog",
+      "path": "./syntaxes/hog.tmLanguage.json"
+    }]
+  }
+}
