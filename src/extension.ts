@@ -5,44 +5,61 @@ import * as child_process from 'child_process';
 import * as path from 'path';
 import { exec } from 'child_process';
 import { spawn } from 'child_process';
+import glob from 'glob';
+import path from 'path';
+import { waitForDebugger } from 'inspector';
 
-
+async function findHogConfFiles(): Promise<string[]> {
+	const pattern = '**/Top/**/hog.conf';
+	const uris = await vscode.workspace.findFiles(pattern);
+	const paths = uris.map(uri => path.relative(path.join(vscode.workspace.rootPath!, 'Top'), path.dirname(uri.fsPath)));
+	return paths;
+}
 
 async function CreateProject() {
-    const arg1 = await vscode.window.showInputBox({
-        prompt: "Which Hog Project do you want to create?"
-    });
-    if (!arg1) {
-        // User cancelled input
-        return;
-    }
+    // const arg1 = await vscode.window.showInputBox({
+    //     prompt: "Which Hog Project do you want to create?"
+    // });
+    // if (!arg1) {
+    //     // User cancelled input
+    //     return;
+    // }
+	const outputChannel = vscode.window.createOutputChannel("Hog");
+		
+	const uris = await findHogConfFiles();
+
+	let i = 0;
+	const arg1 = await vscode.window.showQuickPick(uris, {
+		placeHolder: 'Available Hog projects'
+	});
 
 	const workspaceFolder = vscode.workspace.workspaceFolders?.[0].uri.fsPath; // Get the first workspace folder if there is one
 	if (workspaceFolder) {
 		const scriptPath = path.join(workspaceFolder, 'Hog/CreateProject.sh');
-		const command = `${scriptPath} ${arg1}`;
-		const outputChannel = vscode.window.createOutputChannel("Hog");
+		if (arg1){
+			const command = `${scriptPath} ${arg1}`;
+			outputChannel.show();
+
+			outputChannel.appendLine(`Running command: ${command}`);
+			const childProcess = spawn(command, { shell: true });
+			childProcess.stdout.on('data', (data) => {
+				outputChannel.append(data.toString());
+			});
 		
-		outputChannel.show();
-		outputChannel.appendLine(`Running command: ${command}`);
-		const childProcess = spawn(command, { shell: true });
-		childProcess.stdout.on('data', (data) => {
-			outputChannel.append(data.toString());
-		});
-	
-		childProcess.stderr.on('data', (data) => {
-			outputChannel.append(data.toString());
-		});
-	
-		childProcess.on('error', (error) => {
-			console.error(`exec error: ${error}`);
-			outputChannel.append(`Error: ${error.message}\n`);
-		});
-	
-		childProcess.on('close', (code) => {
-			console.log(`child process exited with code ${code}`);
-			outputChannel.append(`Process exited with code ${code}\n`);
-		});
+			childProcess.stderr.on('data', (data) => {
+				outputChannel.append(data.toString());
+			});
+		
+			childProcess.on('error', (error) => {
+				console.error(`exec error: ${error}`);
+				outputChannel.append(`Error: ${error.message}\n`);
+			});
+		
+			childProcess.on('close', (code) => {
+				console.log(`child process exited with code ${code}`);
+				outputChannel.append(`Process exited with code ${code}\n`);
+			});
+		}}
 		// exec(command, (error, stdout, stderr) => {
 		// 	if (error) {
 		// 		console.error(`exec error: ${error}`);
@@ -73,6 +90,8 @@ export function activate(context: vscode.ExtensionContext) {
 		// The code you place here will be executed every time your command is executed
 		// Display a message box to the user
 		// vscode.window.showInformationMessage('Hello World from Hog!');
+		// const wf = vscode.workspace.workspaceFolders?.[0].uri.fsPath; // Get the first workspace folder if there is one
+
 		CreateProject();
 		
 	});

@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/Hog-CERN/HogVSCode"
   },
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.70.0"
   },
@@ -29,7 +29,7 @@
     "commands": [
       {
         "command": "hog.createproject",
-        "title": "Create Project"
+        "title": "Hog: Create Project"
       }
     ],
     "languages": [

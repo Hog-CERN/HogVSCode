@@ -6,48 +6,61 @@ exports.deactivate = exports.activate = void 0;
 const vscode = require("vscode");
 const path = require("path");
 const child_process_1 = require("child_process");
+async function findHogConfFiles() {
+    const pattern = '**/Top/**/hog.conf';
+    const uris = await vscode.workspace.findFiles(pattern);
+    const paths = uris.map(uri => path.relative(path.join(vscode.workspace.rootPath, 'Top'), path.dirname(uri.fsPath)));
+    return paths;
+}
 async function CreateProject() {
-    const arg1 = await vscode.window.showInputBox({
-        prompt: "Which Hog Project do you want to create?"
+    // const arg1 = await vscode.window.showInputBox({
+    //     prompt: "Which Hog Project do you want to create?"
+    // });
+    // if (!arg1) {
+    //     // User cancelled input
+    //     return;
+    // }
+    const outputChannel = vscode.window.createOutputChannel("Hog");
+    const uris = await findHogConfFiles();
+    let i = 0;
+    const arg1 = await vscode.window.showQuickPick(uris, {
+        placeHolder: 'Available Hog projects'
     });
-    if (!arg1) {
-        // User cancelled input
-        return;
-    }
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0].uri.fsPath; // Get the first workspace folder if there is one
     if (workspaceFolder) {
         const scriptPath = path.join(workspaceFolder, 'Hog/CreateProject.sh');
-        const command = `${scriptPath} ${arg1}`;
-        const outputChannel = vscode.window.createOutputChannel("Hog");
-        outputChannel.show();
-        outputChannel.appendLine(`Running command: ${command}`);
-        const childProcess = (0, child_process_1.spawn)(command, { shell: true });
-        childProcess.stdout.on('data', (data) => {
-            outputChannel.append(data.toString());
-        });
-        childProcess.stderr.on('data', (data) => {
-            outputChannel.append(data.toString());
-        });
-        childProcess.on('error', (error) => {
-            console.error(`exec error: ${error}`);
-            outputChannel.append(`Error: ${error.message}\n`);
-        });
-        childProcess.on('close', (code) => {
-            console.log(`child process exited with code ${code}`);
-            outputChannel.append(`Process exited with code ${code}\n`);
-        });
-        // exec(command, (error, stdout, stderr) => {
-        // 	if (error) {
-        // 		console.error(`exec error: ${error}`);
-        // 		outputChannel.appendLine(`Error: ${error.message}`);
-        // 		return;
-        // 	}
-        // 	console.log(`stdout: ${stdout}`);
-        // 	console.error(`stderr: ${stderr}`);
-        // 	outputChannel.appendLine(stdout);
-        // 	outputChannel.appendLine(stderr);
-        // });
+        if (arg1) {
+            const command = `${scriptPath} ${arg1}`;
+            outputChannel.show();
+            outputChannel.appendLine(`Running command: ${command}`);
+            const childProcess = (0, child_process_1.spawn)(command, { shell: true });
+            childProcess.stdout.on('data', (data) => {
+                outputChannel.append(data.toString());
+            });
+            childProcess.stderr.on('data', (data) => {
+                outputChannel.append(data.toString());
+            });
+            childProcess.on('error', (error) => {
+                console.error(`exec error: ${error}`);
+                outputChannel.append(`Error: ${error.message}\n`);
+            });
+            childProcess.on('close', (code) => {
+                console.log(`child process exited with code ${code}`);
+                outputChannel.append(`Process exited with code ${code}\n`);
+            });
+        }
     }
+    // exec(command, (error, stdout, stderr) => {
+    // 	if (error) {
+    // 		console.error(`exec error: ${error}`);
+    // 		outputChannel.appendLine(`Error: ${error.message}`);
+    // 		return;
+    // 	}
+    // 	console.log(`stdout: ${stdout}`);
+    // 	console.error(`stderr: ${stderr}`);
+    // 	outputChannel.appendLine(stdout);
+    // 	outputChannel.appendLine(stderr);
+    // });
 }
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -62,6 +75,7 @@ function activate(context) {
         // The code you place here will be executed every time your command is executed
         // Display a message box to the user
         // vscode.window.showInformationMessage('Hello World from Hog!');
+        // const wf = vscode.workspace.workspaceFolders?.[0].uri.fsPath; // Get the first workspace folder if there is one
         CreateProject();
     });
     context.subscriptions.push(disposable);
