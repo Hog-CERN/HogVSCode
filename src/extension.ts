@@ -5,8 +5,6 @@ import * as child_process from 'child_process';
 import * as path from 'path';
 import { exec } from 'child_process';
 import { spawn } from 'child_process';
-import glob from 'glob';
-import path from 'path';
 import { waitForDebugger } from 'inspector';
 
 async function findHogConfFiles(): Promise<string[]> {
@@ -59,7 +57,8 @@ async function CreateProject() {
 				console.log(`child process exited with code ${code}`);
 				outputChannel.append(`Process exited with code ${code}\n`);
 			});
-		}}
+		}
+	}
 		// exec(command, (error, stdout, stderr) => {
 		// 	if (error) {
 		// 		console.error(`exec error: ${error}`);
@@ -72,8 +71,8 @@ async function CreateProject() {
 		// 	outputChannel.appendLine(stderr);
 		// });
 
-	}
 }
+
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
