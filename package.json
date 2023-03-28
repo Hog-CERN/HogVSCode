@@ -26,10 +26,35 @@
   "homepage": "https://cern.ch/hog",
   "icon": "hog.png",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "package-explorer",
+          "title": "Package Explorer",
+          "icon": "hog3.svg"
+        }
+      ]
+    },
+    "views": {
+      "package-explorer": [
+        {
+          "id": "package-dependencies",
+          "name": "Dependencies"
+        },
+        {
+          "id": "package-outline",
+          "name": "Outline"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "hog.createproject",
         "title": "Hog: Create Project"
+      },
+      {
+        "command": "hog.openproject",
+        "title": "Hog: Open Vivado Project"
       }
     ],
     "languages": [
