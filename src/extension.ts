@@ -7,6 +7,7 @@ import { exec } from 'child_process';
 import { spawn } from 'child_process';
 import { waitForDebugger } from 'inspector';
 
+
 async function findHogConfFiles(): Promise<string[]> {
 	const pattern = '**/Top/**/hog.conf';
 	const uris = await vscode.workspace.findFiles(pattern);
@@ -42,7 +43,9 @@ async function OpenProject() {
 			outputChannel.appendLine(`Running command: ${command}`);
 			const childProcess = spawn(command, { shell: true });
 			childProcess.stdout.on('data', (data) => {
-				outputChannel.append(data.toString());
+				const ansiRegex = /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-PR-TZcf-nqry=><]/g;
+				const cleanedLog = data.toString().replace(ansiRegex, '');		  
+				outputChannel.append(cleanedLog);
 			});
 		
 			childProcess.stderr.on('data', (data) => {
@@ -89,7 +92,9 @@ async function CreateProject() {
 			outputChannel.appendLine(`Running command: ${command}`);
 			const childProcess = spawn(command, { shell: true });
 			childProcess.stdout.on('data', (data) => {
-				outputChannel.append(data.toString());
+				const ansiRegex = /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-PR-TZcf-nqry=><]/g;
+				const cleanedLog = data.toString().replace(ansiRegex, '');		
+				outputChannel.append(cleanedLog);
 			});
 		
 			childProcess.stderr.on('data', (data) => {

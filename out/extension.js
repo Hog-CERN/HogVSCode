@@ -33,7 +33,9 @@ async function OpenProject() {
             outputChannel.appendLine(`Running command: ${command}`);
             const childProcess = (0, child_process_1.spawn)(command, { shell: true });
             childProcess.stdout.on('data', (data) => {
-                outputChannel.append(data.toString());
+                const ansiRegex = /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-PR-TZcf-nqry=><]/g;
+                const cleanedLog = data.toString().replace(ansiRegex, '');
+                outputChannel.append(cleanedLog);
             });
             childProcess.stderr.on('data', (data) => {
                 outputChannel.append(data.toString());
@@ -72,7 +74,9 @@ async function CreateProject() {
             outputChannel.appendLine(`Running command: ${command}`);
             const childProcess = (0, child_process_1.spawn)(command, { shell: true });
             childProcess.stdout.on('data', (data) => {
-                outputChannel.append(data.toString());
+                const ansiRegex = /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-PR-TZcf-nqry=><]/g;
+                const cleanedLog = data.toString().replace(ansiRegex, '');
+                outputChannel.append(cleanedLog);
             });
             childProcess.stderr.on('data', (data) => {
                 outputChannel.append(data.toString());
