@@ -26,15 +26,6 @@
   "homepage": "https://cern.ch/hog",
   "icon": "hog.png",
   "contributes": {
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "package-explorer",
-          "title": "Package Explorer",
-          "icon": "hog3.svg"
-        }
-      ]
-    },
     "views": {
       "package-explorer": [
         {
