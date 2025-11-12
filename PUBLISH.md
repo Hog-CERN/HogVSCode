@@ -4,6 +4,6 @@
 cd myExtension
 vsce package
 # myExtension.vsix generated
-vsce publish
+vsce publish minor
 # <publisherID>.myExtension published to VS Code Marketplace
 ```

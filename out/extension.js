@@ -67,7 +67,7 @@ async function CreateProject() {
     });
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0].uri.fsPath; // Get the first workspace folder if there is one
     if (workspaceFolder) {
-        const scriptPath = path.join(workspaceFolder, 'Hog/CreateProject.sh');
+        const scriptPath = path.join(workspaceFolder, 'Hog/Do CREATE');
         if (arg1) {
             const command = `${scriptPath} ${arg1}`;
             outputChannel.show();

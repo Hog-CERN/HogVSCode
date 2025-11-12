@@ -24,9 +24,9 @@ async function findCreatedProjects(): Promise<string[]> {
 
 
 async function OpenProject() {
-    
+
 	const outputChannel = vscode.window.createOutputChannel("Hog");
-		
+
 	const uris = await findCreatedProjects();
 
 	let i = 0;
@@ -44,19 +44,19 @@ async function OpenProject() {
 			const childProcess = spawn(command, { shell: true });
 			childProcess.stdout.on('data', (data) => {
 				const ansiRegex = /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-PR-TZcf-nqry=><]/g;
-				const cleanedLog = data.toString().replace(ansiRegex, '');		  
+				const cleanedLog = data.toString().replace(ansiRegex, '');
 				outputChannel.append(cleanedLog);
 			});
-		
+
 			childProcess.stderr.on('data', (data) => {
 				outputChannel.append(data.toString());
 			});
-		
+
 			childProcess.on('error', (error) => {
 				console.error(`exec error: ${error}`);
 				outputChannel.append(`Error: ${error.message}\n`);
 			});
-		
+
 			childProcess.on('close', (code) => {
 				console.log(`child process exited with code ${code}`);
 				outputChannel.append(`Process exited with code ${code}\n`);
@@ -74,7 +74,7 @@ async function CreateProject() {
     //     return;
     // }
 	const outputChannel = vscode.window.createOutputChannel("Hog");
-		
+
 	const uris = await findHogConfFiles();
 
 	let i = 0;
@@ -84,7 +84,7 @@ async function CreateProject() {
 
 	const workspaceFolder = vscode.workspace.workspaceFolders?.[0].uri.fsPath; // Get the first workspace folder if there is one
 	if (workspaceFolder) {
-		const scriptPath = path.join(workspaceFolder, 'Hog/CreateProject.sh');
+		const scriptPath = path.join(workspaceFolder, 'Hog/Do CREATE');
 		if (arg1){
 			const command = `${scriptPath} ${arg1}`;
 			outputChannel.show();
@@ -93,19 +93,19 @@ async function CreateProject() {
 			const childProcess = spawn(command, { shell: true });
 			childProcess.stdout.on('data', (data) => {
 				const ansiRegex = /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-PR-TZcf-nqry=><]/g;
-				const cleanedLog = data.toString().replace(ansiRegex, '');		
+				const cleanedLog = data.toString().replace(ansiRegex, '');
 				outputChannel.append(cleanedLog);
 			});
-		
+
 			childProcess.stderr.on('data', (data) => {
 				outputChannel.append(data.toString());
 			});
-		
+
 			childProcess.on('error', (error) => {
 				console.error(`exec error: ${error}`);
 				outputChannel.append(`Error: ${error.message}\n`);
 			});
-		
+
 			childProcess.on('close', (code) => {
 				console.log(`child process exited with code ${code}`);
 				outputChannel.append(`Process exited with code ${code}\n`);
@@ -130,11 +130,11 @@ interface TreeItemData {
 	label: string;
 	children?: TreeItemData[];
   }
-  
+
   class MyTreeDataProvider implements vscode.TreeDataProvider<TreeItemData> {
 	private _onDidChangeTreeData: vscode.EventEmitter<TreeItemData | undefined> = new vscode.EventEmitter<TreeItemData | undefined>();
 	readonly onDidChangeTreeData: vscode.Event<TreeItemData | undefined> = this._onDidChangeTreeData.event;
-  
+
 	private data: TreeItemData = {
 	  label: "Root",
 	  children: [
@@ -146,11 +146,11 @@ interface TreeItemData {
 		},
 	  ],
 	};
-  
+
 	getChildren(element?: TreeItemData): Thenable<TreeItemData[]> {
 	  return Promise.resolve(element ? element.children ?? [] : this.data.children ?? []);
 	}
-  
+
 	getTreeItem(element: TreeItemData): vscode.TreeItem {
 	  const treeItem = new vscode.TreeItem(element.label);
 	  if (element.children) {
@@ -159,7 +159,7 @@ interface TreeItemData {
 	  treeItem.contextValue = element.label;
 	  return treeItem;
 	}
-  
+
 	refresh(): void {
 	  this._onDidChangeTreeData.fire(undefined);
 	}
@@ -195,7 +195,7 @@ export function activate(context: vscode.ExtensionContext) {
 		// const wf = vscode.workspace.workspaceFolders?.[0].uri.fsPath; // Get the first workspace folder if there is one
 
 		CreateProject();
-		
+
 	});
 
 	let disposable2 = vscode.commands.registerCommand('hog.openproject', () => {
@@ -205,7 +205,7 @@ export function activate(context: vscode.ExtensionContext) {
 		// const wf = vscode.workspace.workspaceFolders?.[0].uri.fsPath; // Get the first workspace folder if there is one
 
 		OpenProject();
-		
+
 	});
 
 	context.subscriptions.push(disposable);
