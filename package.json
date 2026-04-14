@@ -2,7 +2,7 @@
   "name": "hog",
   "displayName": "Hog",
   "description": "Language support to Hog list files (https://cern.ch/hog)",
-  "publisher": "DavideCieri",
+  "publisher": "dcieri",
   "repository": {
     "type": "git",
     "url": "https://github.com/Hog-CERN/HogVSCode"
