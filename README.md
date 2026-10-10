@@ -21,6 +21,10 @@ The *Hog* activity bar view lists every `Top/<project>/hog.conf` of the workspac
 
 Each project has inline and context-menu actions: **Create**, **Run Workflow**, **Synthesis**, **Implementation**, **Simulation**, **Check Syntax**, **Check List Files** and **Open in IDE**. The same commands are in the command palette under `Hog:`.
 
+### Design hierarchy
+
+**Show Design Hierarchy** (the hierarchy icon on a project, or `Hog: Show Design Hierarchy`) runs `Hog/Do TREE <project>` and shows the result in the *Hierarchy* view: modules nested by instantiation, with library and type, a warning for circular references, and a *Packages* group. Click a module to open its source file; modules Hog could not resolve are shown greyed out. The last hierarchy is remembered per workspace. A top module must be set with `top=<module>` in a `.src` list file, and the IDE must be installed (Hog launches its Tcl shell).
+
 The status bar item shows what Hog is running and how it ended; click it for a menu (including **Stop**). All output goes to the *Hog* output channel.
 
 ## Settings

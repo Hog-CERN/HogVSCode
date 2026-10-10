@@ -4,6 +4,8 @@ exports.deactivate = exports.activate = void 0;
 const vscode = require("vscode");
 const hogData_1 = require("./hogData");
 const hogRunner_1 = require("./hogRunner");
+const hierarchyView_1 = require("./hierarchyView");
+const hierarchyParser_1 = require("./hierarchyParser");
 const languageFeatures_1 = require("./languageFeatures");
 const listParser_1 = require("./listParser");
 const projects_1 = require("./projects");
@@ -21,7 +23,18 @@ function activate(context) {
     const runner = new hogRunner_1.HogRunner();
     const projects = new projects_1.HogProjectsProvider();
     const tree = vscode.window.createTreeView('hog.projects', { treeDataProvider: projects });
-    context.subscriptions.push(runner, projects, tree);
+    const hierarchy = new hierarchyView_1.HogHierarchyProvider();
+    const hierarchyView = vscode.window.createTreeView('hog.hierarchy', { treeDataProvider: hierarchy });
+    const HIERARCHY_KEY = 'hog.hierarchy';
+    const showHierarchy = (data) => {
+        hierarchy.set(data);
+        hierarchyView.description = hierarchy.describe();
+    };
+    const saved = context.workspaceState.get(HIERARCHY_KEY);
+    if (saved) {
+        showHierarchy(saved);
+    }
+    context.subscriptions.push(runner, projects, tree, hierarchy, hierarchyView);
     (0, languageFeatures_1.registerLanguageFeatures)(context);
     /** Resolves the project a command acts on: the tree item it was invoked from, or a quick pick. */
     async function pickProject(arg, placeHolder) {
@@ -55,6 +68,40 @@ function activate(context) {
             args: [info.directive, project.name],
             cwd: root.fsPath,
         });
+    }
+    /** Runs `Hog/Do TREE <project>` and shows the printed design hierarchy in the Hierarchy view. */
+    async function runHierarchy(arg) {
+        const project = await pickProject(arg, 'Show the hierarchy of which project?');
+        const root = (0, projects_1.workspaceRoot)();
+        if (!project || !root) {
+            return;
+        }
+        const result = await runner.run({
+            label: 'TREE',
+            project: project.name,
+            command: hogRunner_1.HogRunner.doScript(root.fsPath),
+            args: ['TREE', project.name],
+            cwd: root.fsPath,
+        });
+        if (!result) {
+            return; // another command is running
+        }
+        if (result.code !== 0) {
+            if (result.code !== undefined) {
+                vscode.window.showErrorMessage(`Hog TREE failed for ${project.name} (exit code ${result.code}). See the Hog output.`);
+            }
+            return;
+        }
+        const parsed = (0, hierarchyParser_1.parseHierarchy)(result.output);
+        if (parsed.roots.length === 0) {
+            vscode.window.showWarningMessage(`Hog printed no hierarchy for ${project.name}. Is a top module set with top=<module> in a .src list file?`);
+            return;
+        }
+        const data = { project: project.name, root: root.fsPath, result: parsed, generated: Date.now() };
+        showHierarchy(data);
+        await context.workspaceState.update(HIERARCHY_KEY, data);
+        vscode.window.setStatusBarMessage(`Hog: ${(0, hierarchyParser_1.countNodes)(parsed.roots)} modules in ${project.name}`, 4000);
+        await vscode.commands.executeCommand('hog.hierarchy.focus');
     }
     async function openProject(arg) {
         const project = await pickProject(arg, 'Open which project in the IDE?');
@@ -99,6 +146,7 @@ function activate(context) {
             const info = hogData_1.DIRECTIVES.find(d => d.directive === directive);
             items.push({ label: `$(${info.icon}) ${info.label}`, description: info.description, command });
         }
+        items.push({ label: '$(type-hierarchy) Show design hierarchy', description: 'Hog TREE', command: 'hog.hierarchy' });
         items.push({ label: '$(link-external) Open project in IDE', command: 'hog.openproject' });
         items.push({ label: '$(refresh) Refresh projects', command: 'hog.refresh' });
         const picked = await vscode.window.showQuickPick(items, { placeHolder: 'Hog' });
@@ -109,7 +157,10 @@ function activate(context) {
     for (const [command, directive] of DIRECTIVE_COMMANDS) {
         context.subscriptions.push(vscode.commands.registerCommand(command, (arg) => runDirective(directive, arg)));
     }
-    context.subscriptions.push(vscode.commands.registerCommand('hog.openproject', (arg) => openProject(arg)), vscode.commands.registerCommand('hog.stop', () => runner.stop()), vscode.commands.registerCommand('hog.refresh', () => projects.refresh()), vscode.commands.registerCommand('hog.showMenu', () => showMenu()));
+    context.subscriptions.push(vscode.commands.registerCommand('hog.hierarchy', (arg) => runHierarchy(arg)), vscode.commands.registerCommand('hog.clearhierarchy', async () => {
+        showHierarchy(undefined);
+        await context.workspaceState.update(HIERARCHY_KEY, undefined);
+    }), vscode.commands.registerCommand('hog.openproject', (arg) => openProject(arg)), vscode.commands.registerCommand('hog.stop', () => runner.stop()), vscode.commands.registerCommand('hog.refresh', () => projects.refresh()), vscode.commands.registerCommand('hog.showMenu', () => showMenu()));
 }
 exports.activate = activate;
 function deactivate() { }

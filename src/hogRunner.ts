@@ -15,6 +15,13 @@ export interface HogJob {
 	cwd: string;
 }
 
+export interface HogRunResult {
+	/** Exit code; undefined if the command could not start or was stopped */
+	code: number | null | undefined;
+	/** Everything the command wrote to stdout and stderr */
+	output: string;
+}
+
 /**
  * Runs one Hog/IDE command at a time, streams its output to a single "Hog"
  * channel and reflects its state in a status bar item.
@@ -41,7 +48,8 @@ export class HogRunner implements vscode.Disposable {
 		return path.isAbsolute(configured) ? configured : path.join(root, configured);
 	}
 
-	run(job: HogJob): void {
+	/** Resolves when the command ends, or with undefined if another command is already running. */
+	run(job: HogJob): Promise<HogRunResult | undefined> {
 		if (this.current) {
 			vscode.window.showWarningMessage(
 				`Hog is already running ${this.current.job.label} on ${this.current.job.project}.`,
@@ -51,45 +59,56 @@ export class HogRunner implements vscode.Disposable {
 					this.stop();
 				}
 			});
-			return;
+			return Promise.resolve(undefined);
 		}
 
 		this.channel.show(true);
 		this.channel.appendLine(`\n$ ${[job.command, ...job.args].join(' ')}   (cwd: ${job.cwd})`);
 
-		let child: ChildProcess;
-		try {
-			child = spawn(job.command, job.args, { cwd: job.cwd });
-		} catch (error) {
-			this.channel.appendLine(`Error: ${(error as Error).message}`);
-			this.showResult(job, undefined);
-			return;
-		}
-
-		this.current = { job, process: child };
-		this.stopRequested = false;
-		this.showRunning(job);
-
-		const write = (data: Buffer) => this.channel.append(data.toString().replace(ANSI_RE, ''));
-		child.stdout?.on('data', write);
-		child.stderr?.on('data', write);
-
-		child.on('error', error => {
-			const hint = (error as NodeJS.ErrnoException).code === 'ENOENT'
-				? ` (is "${job.command}" installed and on the PATH? See the hog.* settings)`
-				: '';
-			this.channel.appendLine(`Error: ${error.message}${hint}`);
-			this.current = undefined;
-			this.showResult(job, undefined);
-		});
-
-		child.on('close', code => {
-			if (this.current?.process !== child) {
-				return; // already handled by the 'error' event
+		return new Promise<HogRunResult>(resolve => {
+			let output = '';
+			let child: ChildProcess;
+			try {
+				child = spawn(job.command, job.args, { cwd: job.cwd });
+			} catch (error) {
+				this.channel.appendLine(`Error: ${(error as Error).message}`);
+				this.showResult(job, undefined);
+				resolve({ code: undefined, output });
+				return;
 			}
-			this.current = undefined;
-			this.channel.appendLine(this.stopRequested ? 'Stopped.' : `Process exited with code ${code}`);
-			this.showResult(job, this.stopRequested ? undefined : code);
+
+			this.current = { job, process: child };
+			this.stopRequested = false;
+			this.showRunning(job);
+
+			const write = (data: Buffer) => {
+				const text = data.toString().replace(ANSI_RE, '');
+				output += text;
+				this.channel.append(text);
+			};
+			child.stdout?.on('data', write);
+			child.stderr?.on('data', write);
+
+			child.on('error', error => {
+				const hint = (error as NodeJS.ErrnoException).code === 'ENOENT'
+					? ` (is "${job.command}" installed and on the PATH? See the hog.* settings)`
+					: '';
+				this.channel.appendLine(`Error: ${error.message}${hint}`);
+				this.current = undefined;
+				this.showResult(job, undefined);
+				resolve({ code: undefined, output });
+			});
+
+			child.on('close', code => {
+				if (this.current?.process !== child) {
+					return; // already handled by the 'error' event
+				}
+				this.current = undefined;
+				const exitCode = this.stopRequested ? undefined : code;
+				this.channel.appendLine(this.stopRequested ? 'Stopped.' : `Process exited with code ${code}`);
+				this.showResult(job, exitCode);
+				resolve({ code: exitCode, output });
+			});
 		});
 	}
 

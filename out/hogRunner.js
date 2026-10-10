@@ -27,6 +27,7 @@ class HogRunner {
         const configured = vscode.workspace.getConfiguration('hog').get('doScript', 'Hog/Do');
         return path.isAbsolute(configured) ? configured : path.join(root, configured);
     }
+    /** Resolves when the command ends, or with undefined if another command is already running. */
     run(job) {
         if (this.current) {
             vscode.window.showWarningMessage(`Hog is already running ${this.current.job.label} on ${this.current.job.project}.`, 'Stop it').then(choice => {
@@ -34,40 +35,51 @@ class HogRunner {
                     this.stop();
                 }
             });
-            return;
+            return Promise.resolve(undefined);
         }
         this.channel.show(true);
         this.channel.appendLine(`\n$ ${[job.command, ...job.args].join(' ')}   (cwd: ${job.cwd})`);
-        let child;
-        try {
-            child = (0, child_process_1.spawn)(job.command, job.args, { cwd: job.cwd });
-        }
-        catch (error) {
-            this.channel.appendLine(`Error: ${error.message}`);
-            this.showResult(job, undefined);
-            return;
-        }
-        this.current = { job, process: child };
-        this.stopRequested = false;
-        this.showRunning(job);
-        const write = (data) => this.channel.append(data.toString().replace(ANSI_RE, ''));
-        child.stdout?.on('data', write);
-        child.stderr?.on('data', write);
-        child.on('error', error => {
-            const hint = error.code === 'ENOENT'
-                ? ` (is "${job.command}" installed and on the PATH? See the hog.* settings)`
-                : '';
-            this.channel.appendLine(`Error: ${error.message}${hint}`);
-            this.current = undefined;
-            this.showResult(job, undefined);
-        });
-        child.on('close', code => {
-            if (this.current?.process !== child) {
-                return; // already handled by the 'error' event
+        return new Promise(resolve => {
+            let output = '';
+            let child;
+            try {
+                child = (0, child_process_1.spawn)(job.command, job.args, { cwd: job.cwd });
             }
-            this.current = undefined;
-            this.channel.appendLine(this.stopRequested ? 'Stopped.' : `Process exited with code ${code}`);
-            this.showResult(job, this.stopRequested ? undefined : code);
+            catch (error) {
+                this.channel.appendLine(`Error: ${error.message}`);
+                this.showResult(job, undefined);
+                resolve({ code: undefined, output });
+                return;
+            }
+            this.current = { job, process: child };
+            this.stopRequested = false;
+            this.showRunning(job);
+            const write = (data) => {
+                const text = data.toString().replace(ANSI_RE, '');
+                output += text;
+                this.channel.append(text);
+            };
+            child.stdout?.on('data', write);
+            child.stderr?.on('data', write);
+            child.on('error', error => {
+                const hint = error.code === 'ENOENT'
+                    ? ` (is "${job.command}" installed and on the PATH? See the hog.* settings)`
+                    : '';
+                this.channel.appendLine(`Error: ${error.message}${hint}`);
+                this.current = undefined;
+                this.showResult(job, undefined);
+                resolve({ code: undefined, output });
+            });
+            child.on('close', code => {
+                if (this.current?.process !== child) {
+                    return; // already handled by the 'error' event
+                }
+                this.current = undefined;
+                const exitCode = this.stopRequested ? undefined : code;
+                this.channel.appendLine(this.stopRequested ? 'Stopped.' : `Process exited with code ${code}`);
+                this.showResult(job, exitCode);
+                resolve({ code: exitCode, output });
+            });
         });
     }
     stop() {

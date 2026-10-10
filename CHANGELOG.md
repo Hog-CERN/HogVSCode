@@ -10,6 +10,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Separate grammars for list files and `hog.conf`; `.ipb` and `.sub` list files
 - Hog sidebar with projects, list files and referenced files, using the official Hog logo
 - Commands: Run Workflow, Synthesis, Implementation, Simulation, Check Syntax, Check List Files, Stop
+- Hierarchy view built from `Hog/Do TREE`
 - Status bar item showing the state of the running command
 - Hover, completion, document links, outline and diagnostics for list files and `hog.conf`
 - Settings `hog.doScript`, `hog.vivadoPath`, `hog.quartusPath`, `hog.diagnostics.enable`
