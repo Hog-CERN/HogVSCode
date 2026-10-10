@@ -1,0 +1,55 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Hog Configuration",
+	"scopeName": "source.hog-conf",
+	"patterns": [
+		{ "include": "#comment" },
+		{ "include": "#section" },
+		{ "include": "#property" }
+	],
+	"repository": {
+		"comment": {
+			"name": "comment.line.number-sign.hog-conf",
+			"match": "#.*$"
+		},
+		"section": {
+			"match": "^\\s*(\\[)([\\w.]+)(\\])\\s*$",
+			"captures": {
+				"1": { "name": "punctuation.definition.section.begin.hog-conf" },
+				"2": { "name": "entity.name.section.hog-conf" },
+				"3": { "name": "punctuation.definition.section.end.hog-conf" }
+			}
+		},
+		"property": {
+			"match": "^\\s*([A-Za-z_][\\w.]*)\\s*(=)\\s*([^#\\n]*)",
+			"captures": {
+				"1": { "name": "variable.other.property.hog-conf" },
+				"2": { "name": "keyword.operator.assignment.hog-conf" },
+				"3": {
+					"name": "string.unquoted.hog-conf",
+					"patterns": [
+						{ "include": "#string" },
+						{ "include": "#boolean" },
+						{ "include": "#number" }
+					]
+				}
+			}
+		},
+		"string": {
+			"name": "string.quoted.double.hog-conf",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{ "name": "constant.character.escape.hog-conf", "match": "\\\\." }
+			]
+		},
+		"boolean": {
+			"name": "constant.language.boolean.hog-conf",
+			"match": "\\b(?:true|false)\\b"
+		},
+		"number": {
+			"name": "constant.numeric.hog-conf",
+			"match": "(?<![\\w.\\-])-?\\d+(?:\\.\\d+)?[a-zA-Z]*(?![\\w.])"
+		}
+	}
+}

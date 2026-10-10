@@ -1,0 +1,81 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Hog List",
+	"scopeName": "source.hog-list",
+	"patterns": [
+		{ "include": "#comment" },
+		{ "include": "#section" },
+		{ "include": "#property" },
+		{ "include": "#string" },
+		{ "include": "#modifier-kv" },
+		{ "include": "#modifier-flag" },
+		{ "include": "#filepath" },
+		{ "include": "#number" }
+	],
+	"repository": {
+		"comment": {
+			"name": "comment.line.number-sign.hog-list",
+			"match": "#.*$"
+		},
+		"section": {
+			"match": "^\\s*(\\[)([\\w.]+)(\\])\\s*$",
+			"captures": {
+				"1": { "name": "punctuation.definition.section.begin.hog-list" },
+				"2": { "name": "entity.name.section.hog-list" },
+				"3": { "name": "punctuation.definition.section.end.hog-list" }
+			}
+		},
+		"property": {
+			"comment": "KEY=VALUE at the start of a line, as in the [properties] section of .sim files",
+			"match": "^\\s*([A-Za-z_][\\w.]*)\\s*(=)\\s*([^#\\n]*)",
+			"captures": {
+				"1": { "name": "variable.other.property.hog-list" },
+				"2": { "name": "keyword.operator.assignment.hog-list" },
+				"3": {
+					"name": "string.unquoted.hog-list",
+					"patterns": [
+						{ "include": "#string" },
+						{ "include": "#number" }
+					]
+				}
+			}
+		},
+		"string": {
+			"name": "string.quoted.double.hog-list",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{ "name": "constant.character.escape.hog-list", "match": "\\\\." }
+			]
+		},
+		"modifier-kv": {
+			"comment": "key=value modifier after a file path, e.g. lib=xil_defaultlib top=top_fifo topsim=tb",
+			"match": "(?<=\\s)([A-Za-z_][\\w.-]*)(=)([^\\s#]+)",
+			"captures": {
+				"1": { "name": "keyword.other.modifier.hog-list" },
+				"2": { "name": "keyword.operator.assignment.hog-list" },
+				"3": { "name": "entity.name.tag.hog-list" }
+			}
+		},
+		"modifier-flag": {
+			"name": "keyword.other.modifier.hog-list",
+			"match": "(?<=\\s)(nosynth|noimpl|nosim|noadd|nogenerate|notiming|noplace|locked|SystemVerilog|verilog|verilog_header|XDC|source|qsys|scoped_to_ref|scoped_to_cells|enable|--[a-z][a-z-]*)(?=\\s|#|$)"
+		},
+		"filepath": {
+			"patterns": [
+				{
+					"name": "entity.name.filename.hog-list",
+					"match": "(?<![\\w=])[\\w.\\-*?$~{}]*(?:/[\\w.\\-*?$~{}]+)+/?"
+				},
+				{
+					"name": "entity.name.filename.hog-list",
+					"match": "(?<![\\w=])[\\w.\\-]+\\.(?:vhd|vhdl|v|vh|sv|svh|xci|xdc|bd|tcl|do|udo|xml|ipb|elf|sdc|pdc|lpf|qsys|src|sim|con|ext|lst)\\b"
+				}
+			]
+		},
+		"number": {
+			"name": "constant.numeric.hog-list",
+			"match": "(?<![\\w.\\-])-?\\d+(?:\\.\\d+)?[a-z]*(?![\\w.])"
+		}
+	}
+}

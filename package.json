@@ -1,7 +1,7 @@
 {
   "name": "hog",
   "displayName": "Hog",
-  "description": "Language support to Hog list files (https://cern.ch/hog)",
+  "description": "Language support, project explorer and workflow commands for Hog (https://cern.ch/hog)",
   "publisher": "DavideCieri",
   "repository": {
     "type": "git",
@@ -14,40 +14,210 @@
   "categories": [
     "Programming Languages"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:hog",
+    "onLanguage:hog-conf",
+    "workspaceContains:**/Top/**/hog.conf"
+  ],
   "main": "./out/extension.js",
   "author": {
     "email": "davide.cieri89@gmail.com",
     "name": "Davide Cieri"
   },
   "keywords": [
+    "hog",
+    "hdl",
+    "fpga",
+    "vivado",
+    "quartus",
+    "vhdl",
     "syntax"
   ],
   "homepage": "https://cern.ch/hog",
   "icon": "hog.png",
   "contributes": {
-    "views": {
-      "package-explorer": [
+    "viewsContainers": {
+      "activitybar": [
         {
-          "id": "package-dependencies",
-          "name": "Dependencies"
-        },
-        {
-          "id": "package-outline",
-          "name": "Outline"
+          "id": "hog",
+          "title": "Hog",
+          "icon": "media/hog-logo.png"
         }
       ]
     },
+    "views": {
+      "hog": [
+        {
+          "id": "hog.projects",
+          "name": "Projects"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "hog.projects",
+        "contents": "No Hog projects found.\nHog projects live in `Top/<name>/hog.conf` of the workspace root.\n[Refresh](command:hog.refresh)"
+      }
+    ],
     "commands": [
       {
         "command": "hog.createproject",
-        "title": "Hog: Create Project"
+        "title": "Create Project",
+        "category": "Hog",
+        "icon": "$(add)"
       },
       {
         "command": "hog.openproject",
-        "title": "Hog: Open Vivado Project"
+        "title": "Open Project in IDE",
+        "category": "Hog",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "hog.workflow",
+        "title": "Run Workflow",
+        "category": "Hog",
+        "icon": "$(play)"
+      },
+      {
+        "command": "hog.synthesis",
+        "title": "Run Synthesis",
+        "category": "Hog",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "hog.implementation",
+        "title": "Run Implementation",
+        "category": "Hog",
+        "icon": "$(run-all)"
+      },
+      {
+        "command": "hog.simulation",
+        "title": "Run Simulation",
+        "category": "Hog",
+        "icon": "$(beaker)"
+      },
+      {
+        "command": "hog.checksyntax",
+        "title": "Check Syntax",
+        "category": "Hog",
+        "icon": "$(check)"
+      },
+      {
+        "command": "hog.checklist",
+        "title": "Check List Files",
+        "category": "Hog",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "hog.stop",
+        "title": "Stop Running Command",
+        "category": "Hog",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "hog.refresh",
+        "title": "Refresh Projects",
+        "category": "Hog",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "hog.showMenu",
+        "title": "Show Hog Menu",
+        "category": "Hog",
+        "icon": "$(circuit-board)"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "hog.refresh",
+          "when": "view == hog.projects",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "hog.createproject",
+          "when": "view == hog.projects && viewItem == hogProject.new",
+          "group": "inline@1"
+        },
+        {
+          "command": "hog.openproject",
+          "when": "view == hog.projects && viewItem == hogProject.created",
+          "group": "inline@1"
+        },
+        {
+          "command": "hog.workflow",
+          "when": "view == hog.projects && viewItem =~ /^hogProject/",
+          "group": "inline@2"
+        },
+        {
+          "command": "hog.createproject",
+          "when": "view == hog.projects && viewItem =~ /^hogProject/",
+          "group": "1_run@1"
+        },
+        {
+          "command": "hog.workflow",
+          "when": "view == hog.projects && viewItem =~ /^hogProject/",
+          "group": "1_run@2"
+        },
+        {
+          "command": "hog.synthesis",
+          "when": "view == hog.projects && viewItem =~ /^hogProject/",
+          "group": "1_run@3"
+        },
+        {
+          "command": "hog.implementation",
+          "when": "view == hog.projects && viewItem =~ /^hogProject/",
+          "group": "1_run@4"
+        },
+        {
+          "command": "hog.simulation",
+          "when": "view == hog.projects && viewItem =~ /^hogProject/",
+          "group": "1_run@5"
+        },
+        {
+          "command": "hog.checksyntax",
+          "when": "view == hog.projects && viewItem =~ /^hogProject/",
+          "group": "2_check@1"
+        },
+        {
+          "command": "hog.checklist",
+          "when": "view == hog.projects && viewItem =~ /^hogProject/",
+          "group": "2_check@2"
+        },
+        {
+          "command": "hog.openproject",
+          "when": "view == hog.projects && viewItem == hogProject.created",
+          "group": "3_open@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Hog",
+      "properties": {
+        "hog.doScript": {
+          "type": "string",
+          "default": "Hog/Do",
+          "description": "Path of the Hog launcher script, relative to the workspace root (or absolute)."
+        },
+        "hog.vivadoPath": {
+          "type": "string",
+          "default": "vivado",
+          "description": "Vivado executable used by \"Open Project in IDE\"."
+        },
+        "hog.quartusPath": {
+          "type": "string",
+          "default": "quartus",
+          "description": "Quartus executable used by \"Open Project in IDE\"."
+        },
+        "hog.diagnostics.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Warn about missing files and unknown modifiers in Hog list files."
+        }
+      }
+    },
     "languages": [
       {
         "id": "hog",
@@ -60,7 +230,20 @@
           ".sim",
           ".con",
           ".lst",
-          ".ext"
+          ".ext",
+          ".ipb",
+          ".sub"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "hog-conf",
+        "aliases": [
+          "Hog Configuration",
+          "hog-conf"
+        ],
+        "filenames": [
+          "hog.conf"
         ],
         "configuration": "./language-configuration.json"
       }
@@ -68,8 +251,13 @@
     "grammars": [
       {
         "language": "hog",
-        "scopeName": "source.hog",
-        "path": "./syntaxes/hog.tmLanguage.json"
+        "scopeName": "source.hog-list",
+        "path": "./syntaxes/hog-list.tmLanguage.json"
+      },
+      {
+        "language": "hog-conf",
+        "scopeName": "source.hog-conf",
+        "path": "./syntaxes/hog-conf.tmLanguage.json"
       }
     ]
   },
