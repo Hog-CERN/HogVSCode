@@ -1,9 +1,18 @@
 import * as assert from 'assert';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { toolReport } from '../../tools';
 
 const WORKSPACE = path.resolve(__dirname, '../../../src/test/fixtures/workspace');
 const LIST_FILE = vscode.Uri.file(path.join(WORKSPACE, 'Top/demo/list/demo.src'));
+
+function demoProject() {
+	return {
+		name: 'demo',
+		dir: vscode.Uri.file(path.join(WORKSPACE, 'Top/demo')),
+		root: vscode.Uri.file(WORKSPACE),
+	};
+}
 
 async function waitFor<T>(probe: () => Thenable<T> | T, ok: (value: T) => boolean, timeoutMs = 5000): Promise<T> {
 	const end = Date.now() + timeoutMs;
@@ -58,11 +67,7 @@ suite('Extension (integration)', () => {
 	});
 
 	test('build errors appear in the Problems panel', async () => {
-		const project = {
-			name: 'demo',
-			dir: vscode.Uri.file(path.join(WORKSPACE, 'Top/demo')),
-			root: vscode.Uri.file(WORKSPACE),
-		};
+		const project = demoProject();
 		const source = vscode.Uri.file(path.join(WORKSPACE, 'src/demo.vhd'));
 		const conf = vscode.Uri.file(path.join(WORKSPACE, 'Top/demo/hog.conf'));
 		// Runs the fake Hog/Do of the fixture, which prints messages and exits with 1
@@ -82,9 +87,41 @@ suite('Extension (integration)', () => {
 		assert.strictEqual(vscode.languages.getDiagnostics(source).length, 0);
 	});
 
+	test('configured IDE directories reach Hog/Do', async () => {
+		const toolDir = path.resolve(WORKSPACE, '../tools/bin');
+		const config = vscode.workspace.getConfiguration('hog.tools');
+		await config.update('vivado', toolDir, vscode.ConfigurationTarget.Global);
+		try {
+			const report = toolReport();
+			const vivado = report.tools.find(t => t.tool.id === 'vivado')!;
+			assert.strictEqual(vivado.found, path.join(toolDir, 'vivado'));
+			assert.strictEqual(vivado.misconfigured, false);
+			assert.deepStrictEqual(report.launcher, { name: 'vivado', path: path.join(toolDir, 'vivado') });
+
+			// The fake Hog/Do reports `command -v vivado` as an error on hog.conf
+			const conf = vscode.Uri.file(path.join(WORKSPACE, 'Top/demo/hog.conf'));
+			await vscode.commands.executeCommand('hog.checksyntax', { project: demoProject() });
+			const diagnostics = await waitFor(() => vscode.languages.getDiagnostics(conf), d => d.some(x => x.message.startsWith('vivado=')));
+			assert.ok(diagnostics.some(d => d.message === `vivado=${path.join(toolDir, 'vivado')}`), diagnostics.map(d => d.message).join('\n'));
+		} finally {
+			await config.update('vivado', undefined, vscode.ConfigurationTarget.Global);
+		}
+	});
+
+	test('a wrong IDE directory is reported', async () => {
+		const config = vscode.workspace.getConfiguration('hog.tools');
+		await config.update('quartus', '/nonexistent/quartus/bin', vscode.ConfigurationTarget.Global);
+		try {
+			const quartus = toolReport().tools.find(t => t.tool.id === 'quartus')!;
+			assert.strictEqual(quartus.misconfigured, true);
+		} finally {
+			await config.update('quartus', undefined, vscode.ConfigurationTarget.Global);
+		}
+	});
+
 	test('commands are registered', async () => {
 		const commands = await vscode.commands.getCommands(true);
-		for (const id of ['hog.createproject', 'hog.workflow', 'hog.hierarchy', 'hog.refresh', 'hog.stop']) {
+		for (const id of ['hog.createproject', 'hog.workflow', 'hog.hierarchy', 'hog.refresh', 'hog.stop', 'hog.configureTools', 'hog.checkTools']) {
 			assert.ok(commands.includes(id), id);
 		}
 		await vscode.commands.executeCommand('hog.refresh');

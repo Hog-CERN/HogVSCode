@@ -31,6 +31,20 @@ Each project has inline and context-menu actions: **Create**, **Run Workflow**, 
 
 The status bar item shows what Hog is running and how it ended; click it for a menu (including **Stop**). All output goes to the *Hog* output channel.
 
+## IDE paths
+
+`Hog/Do` runs with the first IDE it finds in the `PATH` (Vivado, Libero, Diamond, tclsh, Quartus, PlanAhead, in that order). VS Code started from the Dock or a desktop launcher often does not have your shell's `PATH`, so you can tell the extension where the IDEs are in **Settings › Extensions › Hog › IDE Paths** (`Hog: Configure IDE Paths`):
+
+| Setting | Example |
+|---|---|
+| `hog.tools.vivado` | `/tools/Xilinx/Vivado/2024.2/bin` |
+| `hog.tools.quartus` | `/opt/intelFPGA_pro/24.1/quartus/bin` |
+| `hog.tools.libero`, `hog.tools.diamond`, `hog.tools.planAhead` | the IDE's `bin` directory |
+| `hog.tools.questa`, `hog.tools.ghdl` | simulator `bin` directories |
+| `hog.tools.extraPaths` | any other directories, e.g. Vitis |
+
+Each value may be the directory or the executable itself; `~` is expanded. The directories are put in front of the `PATH` of every command the extension starts. **`Hog: Check IDEs`** (the tools icon on the Projects view) shows which IDEs are found and which one `Hog/Do` will use. The settings are per machine, so they are not synced to other computers.
+
 ## Settings
 
 | Setting | Default | |

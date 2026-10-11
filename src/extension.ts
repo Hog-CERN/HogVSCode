@@ -6,6 +6,7 @@ import { countNodes, parseHierarchy } from './hierarchyParser';
 import { registerLanguageFeatures } from './languageFeatures';
 import { extensionOf } from './listParser';
 import { HogProject, HogProjectsProvider, workspaceRoot } from './projects';
+import { openToolSettings, showToolReport } from './tools';
 
 /** Commands that run a `Hog/Do <DIRECTIVE> <project>`, with the directive they map to. */
 const DIRECTIVE_COMMANDS: [string, string][] = [
@@ -161,6 +162,8 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		items.push({ label: '$(type-hierarchy) Show design hierarchy', description: 'Hog TREE', command: 'hog.hierarchy' });
 		items.push({ label: '$(link-external) Open project in IDE', command: 'hog.openproject' });
+		items.push({ label: '$(tools) Check IDEs', description: 'Which IDEs Hog can find', command: 'hog.checkTools' });
+		items.push({ label: '$(gear) Configure IDE paths', command: 'hog.configureTools' });
 		items.push({ label: '$(refresh) Refresh projects', command: 'hog.refresh' });
 		const picked = await vscode.window.showQuickPick(items, { placeHolder: 'Hog' });
 		if (picked) {
@@ -181,6 +184,8 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('hog.openproject', (arg?: unknown) => openProject(arg)),
 		vscode.commands.registerCommand('hog.stop', () => runner.stop()),
 		vscode.commands.registerCommand('hog.clearProblems', () => runner.clearProblems()),
+		vscode.commands.registerCommand('hog.configureTools', () => openToolSettings()),
+		vscode.commands.registerCommand('hog.checkTools', () => showToolReport()),
 		vscode.commands.registerCommand('hog.refresh', () => projects.refresh()),
 		vscode.commands.registerCommand('hog.showMenu', () => showMenu()),
 	);

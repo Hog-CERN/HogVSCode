@@ -60,7 +60,7 @@
     "viewsWelcome": [
       {
         "view": "hog.projects",
-        "contents": "No Hog projects found.\nHog projects live in `Top/<name>/hog.conf` of the workspace root.\n[Refresh](command:hog.refresh)"
+        "contents": "No Hog projects found.\nHog projects live in `Top/<name>/hog.conf` of the workspace root.\n[Refresh](command:hog.refresh)\n[Configure IDE Paths](command:hog.configureTools)"
       },
       {
         "view": "hog.hierarchy",
@@ -151,6 +151,18 @@
         "title": "Clear Build Problems",
         "category": "Hog",
         "icon": "$(clear-all)"
+      },
+      {
+        "command": "hog.configureTools",
+        "title": "Configure IDE Paths",
+        "category": "Hog",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "hog.checkTools",
+        "title": "Check IDEs",
+        "category": "Hog",
+        "icon": "$(tools)"
       }
     ],
     "menus": {
@@ -168,6 +180,11 @@
         {
           "command": "hog.hierarchy",
           "when": "view == hog.hierarchy",
+          "group": "navigation"
+        },
+        {
+          "command": "hog.checkTools",
+          "when": "view == hog.projects",
           "group": "navigation"
         }
       ],
@@ -239,36 +256,102 @@
         }
       ]
     },
-    "configuration": {
-      "title": "Hog",
-      "properties": {
-        "hog.doScript": {
-          "type": "string",
-          "default": "Hog/Do",
-          "description": "Path of the Hog launcher script, relative to the workspace root (or absolute)."
-        },
-        "hog.vivadoPath": {
-          "type": "string",
-          "default": "vivado",
-          "description": "Vivado executable used by \"Open Project in IDE\"."
-        },
-        "hog.quartusPath": {
-          "type": "string",
-          "default": "quartus",
-          "description": "Quartus executable used by \"Open Project in IDE\"."
-        },
-        "hog.diagnostics.enable": {
-          "type": "boolean",
-          "default": true,
-          "description": "Warn about missing files and unknown modifiers in Hog list files."
-        },
-        "hog.problems.includeWarnings": {
-          "type": "boolean",
-          "default": false,
-          "description": "Also show WARNING messages from Hog and the vendor tools in the Problems panel (errors and critical warnings are always shown)."
+    "configuration": [
+      {
+        "title": "Hog",
+        "properties": {
+          "hog.doScript": {
+            "type": "string",
+            "default": "Hog/Do",
+            "description": "Path of the Hog launcher script, relative to the workspace root (or absolute)."
+          },
+          "hog.vivadoPath": {
+            "type": "string",
+            "default": "vivado",
+            "description": "Vivado executable used by \"Open Project in IDE\". Looked up in the PATH extended with the IDE Paths settings."
+          },
+          "hog.quartusPath": {
+            "type": "string",
+            "default": "quartus",
+            "description": "Quartus executable used by \"Open Project in IDE\". Looked up in the PATH extended with the IDE Paths settings."
+          },
+          "hog.diagnostics.enable": {
+            "type": "boolean",
+            "default": true,
+            "description": "Warn about missing files and unknown modifiers in Hog list files."
+          },
+          "hog.problems.includeWarnings": {
+            "type": "boolean",
+            "default": false,
+            "description": "Also show WARNING messages from Hog and the vendor tools in the Problems panel (errors and critical warnings are always shown)."
+          }
+        }
+      },
+      {
+        "title": "IDE Paths",
+        "properties": {
+          "hog.tools.vivado": {
+            "type": "string",
+            "default": "",
+            "scope": "machine-overridable",
+            "order": 0,
+            "markdownDescription": "Directory containing the `vivado` executable of Vivado (or the executable itself), e.g. `/tools/Xilinx/Vivado/2024.2/bin`. Leave empty to use the PATH.\n\nThe configured directories are added in front of the PATH. `Hog/Do` uses the first IDE it finds, in this order: Vivado, Libero, Diamond, tclsh, Quartus, PlanAhead. Run **Hog: Check IDEs** to see which one it will use."
+          },
+          "hog.tools.quartus": {
+            "type": "string",
+            "default": "",
+            "scope": "machine-overridable",
+            "order": 1,
+            "markdownDescription": "Directory containing the `quartus` executable of Quartus (or the executable itself), e.g. `/opt/intelFPGA_pro/24.1/quartus/bin`. Leave empty to use the PATH."
+          },
+          "hog.tools.libero": {
+            "type": "string",
+            "default": "",
+            "scope": "machine-overridable",
+            "order": 2,
+            "markdownDescription": "Directory containing the `libero` executable of Libero (or the executable itself), e.g. `/opt/microchip/Libero_SoC_2024.1/Libero/bin`. Leave empty to use the PATH."
+          },
+          "hog.tools.diamond": {
+            "type": "string",
+            "default": "",
+            "scope": "machine-overridable",
+            "order": 3,
+            "markdownDescription": "Directory containing the `diamond` executable of Diamond (or the executable itself), e.g. `/usr/local/diamond/3.13/bin/lin64`. Leave empty to use the PATH."
+          },
+          "hog.tools.planAhead": {
+            "type": "string",
+            "default": "",
+            "scope": "machine-overridable",
+            "order": 4,
+            "markdownDescription": "Directory containing the `planAhead` executable of ISE / PlanAhead (or the executable itself), e.g. `/opt/Xilinx/14.7/ISE_DS/PlanAhead/bin`. Leave empty to use the PATH."
+          },
+          "hog.tools.questa": {
+            "type": "string",
+            "default": "",
+            "scope": "machine-overridable",
+            "order": 5,
+            "markdownDescription": "Directory containing the `vsim` executable of Questa / ModelSim (or the executable itself), e.g. `/opt/questasim/bin`. Leave empty to use the PATH. Used for simulation."
+          },
+          "hog.tools.ghdl": {
+            "type": "string",
+            "default": "",
+            "scope": "machine-overridable",
+            "order": 6,
+            "markdownDescription": "Directory containing the `ghdl` executable of GHDL (or the executable itself), e.g. `/usr/local/bin`. Leave empty to use the PATH. Used for simulation."
+          },
+          "hog.tools.extraPaths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [],
+            "scope": "machine-overridable",
+            "order": 7,
+            "markdownDescription": "Other directories to add to the PATH of the processes started by the extension, e.g. Vitis or a different simulator."
+          }
         }
       }
-    },
+    ],
     "languages": [
       {
         "id": "hog",

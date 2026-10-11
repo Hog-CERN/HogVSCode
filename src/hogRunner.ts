@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { ChildProcess, spawn } from 'child_process';
 import { LogMessage, parseLog, sourceOf } from './logParser';
+import { hogEnv, openToolSettings, showToolReport } from './tools';
 
 // eslint-disable-next-line no-control-regex
 const ANSI_RE = /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-PR-TZcf-nqry=><]/g;
@@ -75,7 +76,7 @@ export class HogRunner implements vscode.Disposable {
 			let output = '';
 			let child: ChildProcess;
 			try {
-				child = spawn(job.command, job.args, { cwd: job.cwd });
+				child = spawn(job.command, job.args, { cwd: job.cwd, env: hogEnv() });
 			} catch (error) {
 				this.channel.appendLine(`Error: ${(error as Error).message}`);
 				resolve(this.finish(job, undefined, output));
@@ -95,11 +96,15 @@ export class HogRunner implements vscode.Disposable {
 			child.stderr?.on('data', write);
 
 			child.on('error', error => {
-				const hint = (error as NodeJS.ErrnoException).code === 'ENOENT'
-					? ` (is "${job.command}" installed and on the PATH? See the hog.* settings)`
+				const notFound = (error as NodeJS.ErrnoException).code === 'ENOENT';
+				const hint = notFound
+					? ` (is "${job.command}" installed? Set its directory with "Hog: Configure IDE Paths")`
 					: '';
 				this.channel.appendLine(`Error: ${error.message}${hint}`);
 				this.current = undefined;
+				if (notFound) {
+					this.offerToolSettings(`Could not run "${job.command}".`);
+				}
 				resolve(this.finish(job, undefined, output));
 			});
 
@@ -122,7 +127,20 @@ export class HogRunner implements vscode.Disposable {
 	private finish(job: HogJob, code: number | null | undefined, output: string): HogRunResult {
 		const summary = this.publishProblems(job, parseLog(output));
 		this.showResult(job, code, summary);
+		if (output.includes('No IDE executable found')) {
+			this.offerToolSettings('Hog could not find an IDE (Vivado, Quartus, Libero, ...) in the PATH.');
+		}
 		return { code, output };
+	}
+
+	private offerToolSettings(message: string): void {
+		vscode.window.showErrorMessage(message, 'Configure IDE Paths', 'Check IDEs').then(choice => {
+			if (choice === 'Configure IDE Paths') {
+				openToolSettings();
+			} else if (choice === 'Check IDEs') {
+				showToolReport();
+			}
+		});
 	}
 
 	/** Reports the errors (and optionally warnings) of a run in the Problems panel; returns a summary. */

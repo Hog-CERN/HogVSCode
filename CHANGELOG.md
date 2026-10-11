@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Added
 - Errors and critical warnings printed by Hog and the vendor tools appear in the Problems panel, with jump-to-file:line when the tool gives a location. The status bar tooltip summarises them.
 - `Hog: Clear Build Problems` command and `hog.problems.includeWarnings` setting.
+- IDE Paths settings page (`hog.tools.vivado`, `hog.tools.quartus`, `hog.tools.libero`, `hog.tools.diamond`, `hog.tools.planAhead`, `hog.tools.questa`, `hog.tools.ghdl`, `hog.tools.extraPaths`): the directories are added to the PATH of every command the extension runs.
+- `Hog: Configure IDE Paths` and `Hog: Check IDEs` commands; a notification links to the settings when Hog cannot find an IDE.
 
 ### Changed
 - Minimum VS Code version lowered from 1.115 to 1.85.

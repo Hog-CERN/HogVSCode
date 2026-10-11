@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Stand-in for Hog/Do used by the integration tests: prints Hog and Vivado style messages.
 echo "INFO: [Hog:Msg-0] Running $1 on $2"
+if [ "$1" = "CHECKSYNTAX" ]; then
+    # Reports which vivado the extension put in the PATH
+    echo "ERROR: [Hog:Env] vivado=$(command -v vivado || echo none)"
+    exit 1
+fi
 echo "ERROR: [Synth 8-439] module 'fifo' not found [$PWD/src/demo.vhd:4]"
 echo "CRITICAL WARNING: [Hog:CheckList] list file is out of date"
 echo "WARNING: [Synth 8-3331] design demo has an unconnected port [$PWD/src/demo.vhd:1]"
