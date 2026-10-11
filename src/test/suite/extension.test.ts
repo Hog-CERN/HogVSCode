@@ -1,15 +1,67 @@
 import * as assert from 'assert';
-
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
+import * as path from 'path';
 import * as vscode from 'vscode';
-// import * as myExtension from '../../extension';
 
-suite('Extension Test Suite', () => {
-	vscode.window.showInformationMessage('Start all tests.');
+const WORKSPACE = path.resolve(__dirname, '../../../src/test/fixtures/workspace');
+const LIST_FILE = vscode.Uri.file(path.join(WORKSPACE, 'Top/demo/list/demo.src'));
 
-	test('Sample test', () => {
-		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
-		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
+async function waitFor<T>(probe: () => Thenable<T> | T, ok: (value: T) => boolean, timeoutMs = 5000): Promise<T> {
+	const end = Date.now() + timeoutMs;
+	let value = await probe();
+	while (!ok(value) && Date.now() < end) {
+		await new Promise(resolve => setTimeout(resolve, 100));
+		value = await probe();
+	}
+	return value;
+}
+
+suite('Extension (integration)', () => {
+	let doc: vscode.TextDocument;
+
+	suiteSetup(async () => {
+		doc = await vscode.workspace.openTextDocument(LIST_FILE);
+		await vscode.window.showTextDocument(doc);
+		const extension = vscode.extensions.getExtension('DavideCieri.hog');
+		assert.ok(extension, 'extension not found');
+		await extension.activate();
+	});
+
+	test('list files get the hog language', () => {
+		assert.strictEqual(doc.languageId, 'hog');
+	});
+
+	test('reports missing files and unknown modifiers', async () => {
+		const diagnostics = await waitFor(
+			() => vscode.languages.getDiagnostics(LIST_FILE),
+			d => d.length >= 2);
+		const messages = diagnostics.map(d => d.message);
+		assert.ok(messages.some(m => m.includes('File not found: src/missing.vhd')), messages.join('\n'));
+		assert.ok(messages.some(m => m.includes('Unknown Hog modifier "bogusflag"')), messages.join('\n'));
+		assert.ok(!messages.some(m => m.includes('src/demo.vhd')), 'existing file flagged as missing');
+	});
+
+	test('hover documents modifiers', async () => {
+		const position = new vscode.Position(1, doc.lineAt(1).text.indexOf('top=') + 1);
+		const hovers = await vscode.commands.executeCommand<vscode.Hover[]>('vscode.executeHoverProvider', LIST_FILE, position);
+		const text = hovers.flatMap(h => h.contents.map(c => (c as vscode.MarkdownString).value ?? String(c))).join('\n');
+		assert.ok(text.includes('top'), text);
+	});
+
+	test('outline lists the files', async () => {
+		const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>('vscode.executeDocumentSymbolProvider', LIST_FILE);
+		assert.deepStrictEqual(symbols.map(s => s.name), ['demo.vhd', 'missing.vhd', 'demo.vhd']);
+	});
+
+	test('paths are links', async () => {
+		const links = await vscode.commands.executeCommand<vscode.DocumentLink[]>('vscode.executeLinkProvider', LIST_FILE);
+		assert.strictEqual(links.length, 3);
+	});
+
+	test('commands are registered', async () => {
+		const commands = await vscode.commands.getCommands(true);
+		for (const id of ['hog.createproject', 'hog.workflow', 'hog.hierarchy', 'hog.refresh', 'hog.stop']) {
+			assert.ok(commands.includes(id), id);
+		}
+		await vscode.commands.executeCommand('hog.refresh');
 	});
 });

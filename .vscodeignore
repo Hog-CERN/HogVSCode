@@ -3,8 +3,13 @@
 src/**
 .gitignore
 .yarnrc
-vsc-extension-quickstart.md
 **/tsconfig.json
 **/.eslintrc.json
 **/*.map
 **/*.ts
+*.svg
+syntaxes/*.svg
+PUBLISH.md
+docs/**
+out/test/**
+src/test/fixtures/**

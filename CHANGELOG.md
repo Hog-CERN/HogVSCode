@@ -6,7 +6,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
-## [0.6.0] - 2026-10-10
+### Changed
+- Minimum VS Code version lowered from 1.115 to 1.85.
+- Smaller package: unused images, docs and compiled tests are no longer shipped.
+
+## [2.0.0] - 2026-10-10
+
+Also published as 1.0.0 with the same content.
 
 ### Added
 

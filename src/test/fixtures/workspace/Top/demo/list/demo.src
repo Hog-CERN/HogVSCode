@@ -1,0 +1,4 @@
+# Demo project used by the integration tests
+src/demo.vhd top=demo
+src/missing.vhd
+src/demo.vhd bogusflag
