@@ -145,6 +145,12 @@
         "title": "Clear Design Hierarchy",
         "category": "Hog",
         "icon": "$(clear-all)"
+      },
+      {
+        "command": "hog.clearProblems",
+        "title": "Clear Build Problems",
+        "category": "Hog",
+        "icon": "$(clear-all)"
       }
     ],
     "menus": {
@@ -255,6 +261,11 @@
           "type": "boolean",
           "default": true,
           "description": "Warn about missing files and unknown modifiers in Hog list files."
+        },
+        "hog.problems.includeWarnings": {
+          "type": "boolean",
+          "default": false,
+          "description": "Also show WARNING messages from Hog and the vendor tools in the Problems panel (errors and critical warnings are always shown)."
         }
       }
     },

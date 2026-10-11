@@ -57,6 +57,31 @@ suite('Extension (integration)', () => {
 		assert.strictEqual(links.length, 3);
 	});
 
+	test('build errors appear in the Problems panel', async () => {
+		const project = {
+			name: 'demo',
+			dir: vscode.Uri.file(path.join(WORKSPACE, 'Top/demo')),
+			root: vscode.Uri.file(WORKSPACE),
+		};
+		const source = vscode.Uri.file(path.join(WORKSPACE, 'src/demo.vhd'));
+		const conf = vscode.Uri.file(path.join(WORKSPACE, 'Top/demo/hog.conf'));
+		// Runs the fake Hog/Do of the fixture, which prints messages and exits with 1
+		await vscode.commands.executeCommand('hog.checklist', { project });
+
+		const onSource = await waitFor(() => vscode.languages.getDiagnostics(source), d => d.length > 0);
+		assert.strictEqual(onSource.length, 1, 'plain warnings are hidden by default');
+		assert.strictEqual(onSource[0].message, "module 'fifo' not found");
+		assert.strictEqual(onSource[0].range.start.line, 3);
+		assert.strictEqual(onSource[0].severity, vscode.DiagnosticSeverity.Error);
+		assert.strictEqual(onSource[0].source, 'Synth');
+
+		const onConf = vscode.languages.getDiagnostics(conf);
+		assert.deepStrictEqual(onConf.map(d => d.message), ['CRITICAL WARNING: list file is out of date']);
+
+		await vscode.commands.executeCommand('hog.clearProblems');
+		assert.strictEqual(vscode.languages.getDiagnostics(source).length, 0);
+	});
+
 	test('commands are registered', async () => {
 		const commands = await vscode.commands.getCommands(true);
 		for (const id of ['hog.createproject', 'hog.workflow', 'hog.hierarchy', 'hog.refresh', 'hog.stop']) {

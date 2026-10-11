@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { ChildProcess, spawn } from 'child_process';
+import { LogMessage, parseLog, sourceOf } from './logParser';
 
 // eslint-disable-next-line no-control-regex
 const ANSI_RE = /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-PR-TZcf-nqry=><]/g;
@@ -13,6 +14,8 @@ export interface HogJob {
 	command: string;
 	args: string[];
 	cwd: string;
+	/** Where messages without a file location are reported, usually the project's hog.conf */
+	confUri?: vscode.Uri;
 }
 
 export interface HogRunResult {
@@ -24,11 +27,13 @@ export interface HogRunResult {
 
 /**
  * Runs one Hog/IDE command at a time, streams its output to a single "Hog"
- * channel and reflects its state in a status bar item.
+ * channel, reflects its state in a status bar item and reports the errors
+ * it printed in the Problems panel.
  */
 export class HogRunner implements vscode.Disposable {
 	private readonly channel = vscode.window.createOutputChannel('Hog');
 	private readonly statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
+	private readonly problems = vscode.languages.createDiagnosticCollection('hog-build');
 	private current: { job: HogJob; process: ChildProcess } | undefined;
 	private stopRequested = false;
 
@@ -62,6 +67,7 @@ export class HogRunner implements vscode.Disposable {
 			return Promise.resolve(undefined);
 		}
 
+		this.problems.clear();
 		this.channel.show(true);
 		this.channel.appendLine(`\n$ ${[job.command, ...job.args].join(' ')}   (cwd: ${job.cwd})`);
 
@@ -72,8 +78,7 @@ export class HogRunner implements vscode.Disposable {
 				child = spawn(job.command, job.args, { cwd: job.cwd });
 			} catch (error) {
 				this.channel.appendLine(`Error: ${(error as Error).message}`);
-				this.showResult(job, undefined);
-				resolve({ code: undefined, output });
+				resolve(this.finish(job, undefined, output));
 				return;
 			}
 
@@ -95,8 +100,7 @@ export class HogRunner implements vscode.Disposable {
 					: '';
 				this.channel.appendLine(`Error: ${error.message}${hint}`);
 				this.current = undefined;
-				this.showResult(job, undefined);
-				resolve({ code: undefined, output });
+				resolve(this.finish(job, undefined, output));
 			});
 
 			child.on('close', code => {
@@ -106,10 +110,63 @@ export class HogRunner implements vscode.Disposable {
 				this.current = undefined;
 				const exitCode = this.stopRequested ? undefined : code;
 				this.channel.appendLine(this.stopRequested ? 'Stopped.' : `Process exited with code ${code}`);
-				this.showResult(job, exitCode);
-				resolve({ code: exitCode, output });
+				resolve(this.finish(job, exitCode, output));
 			});
 		});
+	}
+
+	clearProblems(): void {
+		this.problems.clear();
+	}
+
+	private finish(job: HogJob, code: number | null | undefined, output: string): HogRunResult {
+		const summary = this.publishProblems(job, parseLog(output));
+		this.showResult(job, code, summary);
+		return { code, output };
+	}
+
+	/** Reports the errors (and optionally warnings) of a run in the Problems panel; returns a summary. */
+	private publishProblems(job: HogJob, messages: LogMessage[]): string | undefined {
+		const includeWarnings = vscode.workspace.getConfiguration('hog').get<boolean>('problems.includeWarnings', false);
+		const byFile = new Map<string, { uri: vscode.Uri; diagnostics: vscode.Diagnostic[] }>();
+		let errors = 0;
+		let critical = 0;
+
+		for (const msg of messages) {
+			if (msg.severity === 'warning' && !includeWarnings) {
+				continue;
+			}
+			if (msg.severity === 'error') {
+				errors++;
+			} else if (msg.severity === 'critical') {
+				critical++;
+			}
+
+			const uri = msg.file
+				? vscode.Uri.file(path.isAbsolute(msg.file) ? msg.file : path.join(job.cwd, msg.file))
+				: job.confUri;
+			if (!uri) {
+				continue;
+			}
+			const line = Math.max((msg.line ?? 1) - 1, 0);
+			const severity = msg.severity === 'warning' ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error;
+			const text = msg.severity === 'critical' ? `CRITICAL WARNING: ${msg.message}` : msg.message;
+			const diagnostic = new vscode.Diagnostic(new vscode.Range(line, 0, line, Number.MAX_SAFE_INTEGER), text, severity);
+			diagnostic.source = sourceOf(msg.id);
+			diagnostic.code = msg.id;
+
+			const entry = byFile.get(uri.toString()) ?? { uri, diagnostics: [] };
+			entry.diagnostics.push(diagnostic);
+			byFile.set(uri.toString(), entry);
+		}
+
+		this.problems.set([...byFile.values()].map(e => [e.uri, e.diagnostics] as [vscode.Uri, vscode.Diagnostic[]]));
+		if (errors === 0 && critical === 0) {
+			return undefined;
+		}
+		const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+		return [errors ? plural(errors, 'error') : '', critical ? plural(critical, 'critical warning') : '']
+			.filter(Boolean).join(', ');
 	}
 
 	stop(): void {
@@ -131,7 +188,7 @@ export class HogRunner implements vscode.Disposable {
 		this.statusItem.backgroundColor = undefined;
 	}
 
-	private showResult(job: HogJob, code: number | null | undefined): void {
+	private showResult(job: HogJob, code: number | null | undefined, summary?: string): void {
 		if (code === 0) {
 			this.statusItem.text = `$(check) Hog: ${job.label} ${job.project}`;
 			this.statusItem.backgroundColor = undefined;
@@ -142,12 +199,15 @@ export class HogRunner implements vscode.Disposable {
 			this.statusItem.text = `$(error) Hog: ${job.label} ${job.project}`;
 			this.statusItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
 		}
-		this.statusItem.tooltip = 'Hog: click for project commands';
+		this.statusItem.tooltip = summary
+			? `Hog: ${job.label} ${job.project}: ${summary} (see the Problems panel). Click for project commands.`
+			: 'Hog: click for project commands';
 	}
 
 	dispose(): void {
 		this.stop();
 		this.channel.dispose();
 		this.statusItem.dispose();
+		this.problems.dispose();
 	}
 }

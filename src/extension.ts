@@ -73,6 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
 			command: HogRunner.doScript(root.fsPath),
 			args: [info.directive, project.name],
 			cwd: root.fsPath,
+			confUri: vscode.Uri.joinPath(project.dir, 'hog.conf'),
 		});
 	}
 
@@ -89,6 +90,7 @@ export function activate(context: vscode.ExtensionContext) {
 			command: HogRunner.doScript(root.fsPath),
 			args: ['TREE', project.name],
 			cwd: root.fsPath,
+			confUri: vscode.Uri.joinPath(project.dir, 'hog.conf'),
 		});
 		if (!result) {
 			return; // another command is running
@@ -143,6 +145,7 @@ export function activate(context: vscode.ExtensionContext) {
 			command,
 			args: [project.projectFile.fsPath],
 			cwd: root.fsPath,
+			confUri: vscode.Uri.joinPath(project.dir, 'hog.conf'),
 		});
 	}
 
@@ -177,6 +180,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}),
 		vscode.commands.registerCommand('hog.openproject', (arg?: unknown) => openProject(arg)),
 		vscode.commands.registerCommand('hog.stop', () => runner.stop()),
+		vscode.commands.registerCommand('hog.clearProblems', () => runner.clearProblems()),
 		vscode.commands.registerCommand('hog.refresh', () => projects.refresh()),
 		vscode.commands.registerCommand('hog.showMenu', () => showMenu()),
 	);

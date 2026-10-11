@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+- Errors and critical warnings printed by Hog and the vendor tools appear in the Problems panel, with jump-to-file:line when the tool gives a location. The status bar tooltip summarises them.
+- `Hog: Clear Build Problems` command and `hog.problems.includeWarnings` setting.
+
 ### Changed
 - Minimum VS Code version lowered from 1.115 to 1.85.
 - Smaller package: unused images, docs and compiled tests are no longer shipped.
