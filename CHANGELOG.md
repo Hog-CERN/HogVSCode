@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- The IDE Paths directories are also added to the `PATH` of the integrated terminals, so `./Hog/Do` run by hand finds the same IDEs as the extension's commands.
+- A full path in `hog.vivadoPath` or `hog.quartusPath` adds its directory to the `PATH` used by `Hog/Do`, not only by Open Project.
+
+## [2.1.0] - 2026-10-11
+
+### Added
 - Errors and critical warnings printed by Hog and the vendor tools appear in the Problems panel, with jump-to-file:line when the tool gives a location. The status bar tooltip summarises them.
 - `Hog: Clear Build Problems` command and `hog.problems.includeWarnings` setting.
 - IDE Paths settings page (`hog.tools.vivado`, `hog.tools.quartus`, `hog.tools.libero`, `hog.tools.diamond`, `hog.tools.planAhead`, `hog.tools.questa`, `hog.tools.ghdl`, `hog.tools.extraPaths`): the directories are added to the PATH of every command the extension runs.

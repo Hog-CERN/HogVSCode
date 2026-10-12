@@ -268,12 +268,12 @@
           "hog.vivadoPath": {
             "type": "string",
             "default": "vivado",
-            "description": "Vivado executable used by \"Open Project in IDE\". Looked up in the PATH extended with the IDE Paths settings."
+            "description": "Vivado executable used by \"Open Project in IDE\". Looked up in the PATH extended with the IDE Paths settings. A full path also adds its directory to the PATH used by Hog/Do and the integrated terminals."
           },
           "hog.quartusPath": {
             "type": "string",
             "default": "quartus",
-            "description": "Quartus executable used by \"Open Project in IDE\". Looked up in the PATH extended with the IDE Paths settings."
+            "description": "Quartus executable used by \"Open Project in IDE\". Looked up in the PATH extended with the IDE Paths settings. A full path also adds its directory to the PATH used by Hog/Do and the integrated terminals."
           },
           "hog.diagnostics.enable": {
             "type": "boolean",

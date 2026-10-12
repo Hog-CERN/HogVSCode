@@ -43,14 +43,14 @@ The status bar item shows what Hog is running and how it ended; click it for a m
 | `hog.tools.questa`, `hog.tools.ghdl` | simulator `bin` directories |
 | `hog.tools.extraPaths` | any other directories, e.g. Vitis |
 
-Each value may be the directory or the executable itself; `~` is expanded. The directories are put in front of the `PATH` of every command the extension starts. **`Hog: Check IDEs`** (the tools icon on the Projects view) shows which IDEs are found and which one `Hog/Do` will use. The settings are per machine, so they are not synced to other computers.
+Each value may be the directory or the executable itself; `~` is expanded. The directories are put in front of the `PATH` of every command the extension starts (all `Hog/Do` directives, Show Design Hierarchy, Open Project) and of the integrated terminals, so `./Hog/Do` typed in a VS Code terminal finds the same IDEs. Terminals already open when you change a setting show a warning icon; reopen them to pick up the new `PATH`. **`Hog: Check IDEs`** (the tools icon on the Projects view) shows which IDEs are found and which one `Hog/Do` will use. The settings are per machine, so they are not synced to other computers.
 
 ## Settings
 
 | Setting | Default | |
 |---|---|---|
 | `hog.doScript` | `Hog/Do` | Hog launcher, relative to the workspace root |
-| `hog.vivadoPath` | `vivado` | Used by *Open Project in IDE* |
-| `hog.quartusPath` | `quartus` | Used by *Open Project in IDE* |
+| `hog.vivadoPath` | `vivado` | Used by *Open Project in IDE*; a full path also adds its directory to the `PATH` |
+| `hog.quartusPath` | `quartus` | Used by *Open Project in IDE*; a full path also adds its directory to the `PATH` |
 | `hog.diagnostics.enable` | `true` | Warn about missing files and unknown modifiers |
 | `hog.problems.includeWarnings` | `false` | Also show plain `WARNING` messages from builds in the Problems panel |

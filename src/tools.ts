@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { TOOLS, ToolInfo, buildPath, doLauncher, expandHome, findExecutable, toolDirectory } from './toolEnv';
 
 export interface ToolStatus {
@@ -33,7 +34,15 @@ export function configuredDirectories(): string[] {
 			dirs.push(expandHome(extra.trim()));
 		}
 	}
-	return dirs;
+	// hog.vivadoPath / hog.quartusPath given as a full path: Hog/Do must find the same IDE
+	const hog = vscode.workspace.getConfiguration('hog');
+	for (const key of ['vivadoPath', 'quartusPath']) {
+		const value = expandHome(hog.get<string>(key, '').trim());
+		if (/[\\/]/.test(value)) {
+			dirs.push(path.dirname(value));
+		}
+	}
+	return [...new Set(dirs)];
 }
 
 /** Environment for every process the extension starts: the PATH extended with the configured IDE directories. */
@@ -41,6 +50,21 @@ export function hogEnv(): NodeJS.ProcessEnv {
 	const env = { ...process.env };
 	env.PATH = buildPath(configuredDirectories(), process.env.PATH ?? '');
 	return env;
+}
+
+/** Puts the configured IDE directories in front of the PATH of the integrated terminals, so `./Hog/Do` typed there finds them too. */
+export function applyTerminalPath(collection: vscode.EnvironmentVariableCollection): void {
+	collection.clear();
+	const dirs = configuredDirectories();
+	if (dirs.length > 0) {
+		collection.prepend('PATH', dirs.join(path.delimiter) + path.delimiter);
+		collection.description = `Hog: IDE directories added to the PATH (${dirs.join(', ')})`;
+	}
+}
+
+/** Whether a configuration change affects the directories added to the PATH. */
+export function affectsToolPath(event: vscode.ConfigurationChangeEvent): boolean {
+	return ['hog.tools', 'hog.vivadoPath', 'hog.quartusPath'].some(key => event.affectsConfiguration(key));
 }
 
 export function toolReport(): ToolReport {

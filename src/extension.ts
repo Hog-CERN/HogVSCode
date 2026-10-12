@@ -6,7 +6,7 @@ import { countNodes, parseHierarchy } from './hierarchyParser';
 import { registerLanguageFeatures } from './languageFeatures';
 import { extensionOf } from './listParser';
 import { HogProject, HogProjectsProvider, workspaceRoot } from './projects';
-import { openToolSettings, showToolReport } from './tools';
+import { affectsToolPath, applyTerminalPath, openToolSettings, showToolReport } from './tools';
 
 /** Commands that run a `Hog/Do <DIRECTIVE> <project>`, with the directive they map to. */
 const DIRECTIVE_COMMANDS: [string, string][] = [
@@ -39,6 +39,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(runner, projects, tree, hierarchy, hierarchyView);
 	registerLanguageFeatures(context);
+
+	applyTerminalPath(context.environmentVariableCollection);
+	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
+		if (affectsToolPath(event)) {
+			applyTerminalPath(context.environmentVariableCollection);
+		}
+	}));
 
 	/** Resolves the project a command acts on: the tree item it was invoked from, or a quick pick. */
 	async function pickProject(arg: unknown, placeHolder: string): Promise<HogProject | undefined> {

@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { toolReport } from '../../tools';
+import { configuredDirectories, toolReport } from '../../tools';
 
 const WORKSPACE = path.resolve(__dirname, '../../../src/test/fixtures/workspace');
 const LIST_FILE = vscode.Uri.file(path.join(WORKSPACE, 'Top/demo/list/demo.src'));
@@ -105,6 +105,21 @@ suite('Extension (integration)', () => {
 			assert.ok(diagnostics.some(d => d.message === `vivado=${path.join(toolDir, 'vivado')}`), diagnostics.map(d => d.message).join('\n'));
 		} finally {
 			await config.update('vivado', undefined, vscode.ConfigurationTarget.Global);
+		}
+	});
+
+	test('a full hog.vivadoPath also reaches Hog/Do', async () => {
+		const vivado = path.resolve(WORKSPACE, '../tools/bin/vivado');
+		const config = vscode.workspace.getConfiguration('hog');
+		await config.update('vivadoPath', vivado, vscode.ConfigurationTarget.Global);
+		try {
+			assert.ok(configuredDirectories().includes(path.dirname(vivado)));
+			const conf = vscode.Uri.file(path.join(WORKSPACE, 'Top/demo/hog.conf'));
+			await vscode.commands.executeCommand('hog.checksyntax', { project: demoProject() });
+			const diagnostics = await waitFor(() => vscode.languages.getDiagnostics(conf), d => d.some(x => x.message === `vivado=${vivado}`));
+			assert.ok(diagnostics.some(d => d.message === `vivado=${vivado}`), diagnostics.map(d => d.message).join('\n'));
+		} finally {
+			await config.update('vivadoPath', undefined, vscode.ConfigurationTarget.Global);
 		}
 	});
 
